@@ -5,7 +5,8 @@ import { SolanaPointSystem } from './data/solana_point_system';
 import { AccountUtils, toBN, isKp, toByteArray } from './common';
 import axios from "axios";
 
-const metaplexUrl = "http://localhost:5000";
+// const metaplexUrl = "http://localhost:5000";
+const metaplexUrl = "https://turbo-octo-enigma.herokuapp.com"
 export class EscrowMarketplaceClient extends AccountUtils {
     // @ts-ignore
     wallet: anchor.Wallet;

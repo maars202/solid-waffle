@@ -16,12 +16,6 @@ export interface NFTInterface {
     // price: number;
 }
 
-                    // sellerKey: tokenAccountInfo.account.sellerKey,
-                    // mintPubKey: tokenAccountInfo.account.mintAddress,
-                    // // tokenPubKey: tokenAccountInfo.account.escrowToken,
-                    // imageUrl: availMintsMetadata[index].imageUrl,
-                    // name: availMintsMetadata[index].name,
-                    // // price: tokenAccountInfo.account.listPrice.toNumber(),
 
 interface cardNFTInterface {
     nft: NFTInterface;

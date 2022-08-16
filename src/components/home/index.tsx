@@ -42,14 +42,7 @@ const Home = () => {
 
         setAllListedCardsNftInfo(
             allListingProofAccounts.map((tokenAccountInfo, index) => {
-                // return {
-                //     sellerKey: tokenAccountInfo.account.sellerKey,
-                //     mintPubKey: tokenAccountInfo.account.nftMint,
-                //     tokenPubKey: tokenAccountInfo.account.escrowToken,
-                //     imageUrl: availMintsMetadata[index].imageUrl,
-                //     name: availMintsMetadata[index].name,
-                //     price: tokenAccountInfo.account.listPrice.toNumber(),
-                // };
+                
                 return {
                     sellerKey: tokenAccountInfo.account.sellerKey,
                     mintPubKey: tokenAccountInfo.account.mintAddress,
