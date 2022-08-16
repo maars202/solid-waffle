@@ -12,7 +12,8 @@ interface createListingInterface {
 }
 
 const CancelListing = ({ nft, wallet, setOverallStates }: createListingInterface) => {
-    const { mintPubKey, tokenPubKey, price } = nft;
+    // const { mintPubKey, tokenPubKey, price } = nft;
+    const { mintPubKey, tokenPubKey } = nft;
     const [isTxLoading, setIsTxLoading] = useState<boolean>(false);
     const [wsSubscriptionId, setWsSubscribtionId] = useState<number>();
 
@@ -25,7 +26,7 @@ const CancelListing = ({ nft, wallet, setOverallStates }: createListingInterface
             setIsTxLoading(true);
             try {
                 const emClient = await initEscrowMarketplaceClient(wallet as any);
-                const { txSig, sellerTokenPda } = await emClient.cancelListing(
+                const { txSig, sellerTokenPda } = await emClient.increment(
                     wallet.publicKey,
                     tokenPubKey,
                     mintPubKey,
@@ -50,7 +51,7 @@ const CancelListing = ({ nft, wallet, setOverallStates }: createListingInterface
         <div className="flex flex-row mt-3 space-x-1.5 justify-between">
             <div className="flex flex-row space-x-1">
                 <div className="flex items-center">{solanaSVG()}</div> 
-                <div className="flex items-center">{price/1e9}</div>
+                {/* <div className="flex items-center">{price/1e9}</div> */}
             </div>
             <button
                 onClick={onClickCancel}
@@ -78,7 +79,7 @@ const CancelListing = ({ nft, wallet, setOverallStates }: createListingInterface
                         ></path>
                     </svg>
                 ) : (
-                    'Cancel'
+                    'Redeem'
                 )}
             </button>
         </div>

@@ -1,14 +1,16 @@
 import * as anchor from '@project-serum/anchor';
 import { BN, Idl, Program, AnchorProvider } from '@project-serum/anchor';
 import { Connection, Keypair, PublicKey, SystemProgram } from '@solana/web3.js';
-import { EscrowMarketplaceProgram } from './data/escrow_marketplace_program';
+import { SolanaPointSystem } from './data/solana_point_system';
 import { AccountUtils, toBN, isKp, toByteArray } from './common';
+import axios from "axios";
 
+const metaplexUrl = "http://localhost:5000";
 export class EscrowMarketplaceClient extends AccountUtils {
     // @ts-ignore
     wallet: anchor.Wallet;
     provider!: anchor.Provider;
-    escrowMarketplaceProgram!: anchor.Program<EscrowMarketplaceProgram>;
+    escrowMarketplaceProgram!: anchor.Program<SolanaPointSystem>;
 
     constructor(
         conn: Connection,
@@ -32,7 +34,7 @@ export class EscrowMarketplaceClient extends AccountUtils {
         //instantiating program depends on the environment
         if (idl && programId) {
             //means running in prod
-            this.escrowMarketplaceProgram = new anchor.Program<EscrowMarketplaceProgram>(
+            this.escrowMarketplaceProgram = new anchor.Program<SolanaPointSystem>(
                 idl as any,
                 programId,
                 this.provider
@@ -43,96 +45,139 @@ export class EscrowMarketplaceClient extends AccountUtils {
     // --------------------------------------- fetch deserialized accounts
 
     async fetchAllListingProofAcc() {
-        const items = this.escrowMarketplaceProgram.account.listingProof.all();
-        // console.log("fetchAllListingProofAcc --> ", items);
+        const items = await this.escrowMarketplaceProgram.account.baseAccount.all();
         return items
     }
 
     async fetchListingProofAccBySeller(seller: PublicKey) {
-        const filter = [
-            {
-                memcmp: {
-                    offset: 8 + 32, //prepend for anchor's discriminator + nft mint
-                    bytes: seller.toBase58(),
-                },
-            },
-        ];
-        return this.escrowMarketplaceProgram.account.listingProof.all(filter);
+        const items = await this.escrowMarketplaceProgram.account.baseAccount.all();
+        let filteredBySeller = items.filter(function (item) {
+            return item.account.sellerKey.equals(seller);
+          });
+        
+        return filteredBySeller;
+    }
+
+    async fetchListingProofAccByTokenAccount(tokenAccount: PublicKey) {
+        const items = await this.escrowMarketplaceProgram.account.baseAccount.all();
+        
+        let filteredByToken = items.filter(function (item) {
+            // console.log(item.account.sellerKey.equals(tokenAccount));
+            return item.account.sellerToken.equals(tokenAccount);
+          });
+    
+        return filteredByToken;
     }
 
     async fetchListingProofAccByEscrowToken(escrowToken: PublicKey) {
-        const filter = [
-            {
-                memcmp: {
-                    offset: 8 + 32 + 32 + 32, //prepend for anchor's discriminator + nft mint + seller key + seller token
-                    bytes: escrowToken.toBase58(),
-                },
-            },
-        ];
-        return (await this.escrowMarketplaceProgram.account.listingProof.all(filter))[0];
+
+        return (await this.escrowMarketplaceProgram.account.baseAccount.all());
     }
 
-    // --------------------------------------- find all PDA addresses
+        async createListing(seller: PublicKey, sellerToken: PublicKey, nftMint: PublicKey) {
 
-    // --------------------------------------- ixs
 
-    async createListing(seller: PublicKey, sellerToken: PublicKey, nftMint: PublicKey, sellerListingPrice: number) {
-        const [escrowTokenAccount] = await this.findProgramAddress(
-            // for connecting to this part of CreateListing<'info>:
-            // seeds = [seller_token.key().as_ref(), b"escrow-token"],
-            [sellerToken.toBytes(), Buffer.from(anchor.utils.bytes.utf8.encode('escrow-token'))],
+        const [listingProofPda, listingProofAccountBump] =    await PublicKey.findProgramAddress(
+            [seller.toBytes(), nftMint.toBytes(), Buffer.from(anchor.utils.bytes.utf8.encode("points"))],
+            // need programid since the program is the one that is "init" this account! and it uses its own programid to derive/find the suitable address!
             this.escrowMarketplaceProgram.programId
-        );
+          );
 
-        const [listingProofPda, listingProofAccountBump] = await this.findProgramAddress(
-            [sellerToken.toBytes()],
-            this.escrowMarketplaceProgram.programId
-        );
 
         const txSig = await this.escrowMarketplaceProgram.methods
-            .createListing(toBN(sellerListingPrice), listingProofAccountBump)
+            .create("10")
             .accounts({
+                sellerToken: sellerToken,
+                baseAccount: listingProofPda,
                 seller: seller,
-                sellerToken,
-                nftMint,
-                listingProof: listingProofPda,
-                escrowToken: escrowTokenAccount,
+                mintAddress: nftMint,
             })
             .rpc();
 
         return { txSig, listingProofPda };
     }
 
-    async cancelListing(seller: PublicKey, escrowToken: PublicKey, nftMint: PublicKey) {
+    async fetchNFTData(mintAddress: String){
+        var config = {
+            method: 'get',
+            url: metaplexUrl + `/getNFTbyMint?mint=${mintAddress}`,
+            headers: { }
+          };
+          
+          const result = await axios(config)
+          .then(function (response) {
+            console.log(JSON.stringify(response.data));
+            return response.data
+          })
+          .catch(function (error) {
+            console.log(error);
+          });
+
+          return result;
+          
+    }
+
+    async evolveNFTImage(mintAddress: String, imageUrl: String){
+        
+        var config = {
+            method: 'get',
+            url: metaplexUrl + `/updateNFTMetadata?mint=${mintAddress}&attributes=5,17,3&imageurl=${imageUrl}`,
+            headers: { }
+        };
+        
+        const result: String = await axios(config)
+        .then(function (response) {
+            return "Success";
+        })
+        .catch(function (error) {
+            // console.log(error);
+            return "Failed"
+        });
+
+        return result
+
+    }
+
+    // async cancelListing(seller: PublicKey, escrowToken: PublicKey, nftMint: PublicKey) {
+        async increment(seller: PublicKey, escrowToken: PublicKey, nftMint: PublicKey) {
+
+            const results = await this.fetchListingProofAccByTokenAccount(escrowToken);
+            
+            const [listingProofPda, listingProofAccountBump] =    await PublicKey.findProgramAddress(
+                [seller.toBytes(), nftMint.toBytes(), Buffer.from(anchor.utils.bytes.utf8.encode("points"))],
+                // need programid since the program is the one that is "init" this account! and it uses its own programid to derive/find the suitable address!
+                this.escrowMarketplaceProgram.programId
+              );
+              const txSig = await this.escrowMarketplaceProgram.methods
+            .increment()
+            .accounts({
+                baseAccount: listingProofPda,
+                owner: seller,
+            })
+            .rpc();
+
+            function delay(ms: number) {
+                return new Promise( resolve => setTimeout(resolve, ms) );
+            }
+            await delay(20000);
 
 
+            const results1 = await this.fetchListingProofAccByTokenAccount(escrowToken);
+
+            if (results1[0].account.count.toNumber() > results[0].account.count.toNumber()){
+                console.log(results[0].account.count.toNumber(), " became ", results1[0].account.count.toNumber());
+                const mintAddress = results[0].account.mintAddress.toBase58();
+                const currentNFT = await this.fetchNFTData(mintAddress);
+                let evolvedImageUrl = "";
+                if (currentNFT.json.image == "https://bafkreiep6um5ivn33iskqlot33e4fu2qe77xnbujalsbi7nmj6xm5u3y3a.ipfs.nftstorage.link/"){
+                    evolvedImageUrl = "https://bafybeieur7uhekznn5c7vp55esp236x2rb4mqaum4l7qbhngfvwybhqcxq.ipfs.nftstorage.link/1.png";
+                }else{
+                    evolvedImageUrl = "https://bafkreiep6um5ivn33iskqlot33e4fu2qe77xnbujalsbi7nmj6xm5u3y3a.ipfs.nftstorage.link/";
+                }
+                await this.evolveNFTImage(mintAddress, evolvedImageUrl);
+            }
         
         return ;
     }
 
-    async purchaseListing(buyerKey: PublicKey, sellerKey: PublicKey, escrowToken: PublicKey, nftMint: PublicKey) {
-        const buyerTokenPda = await this.findATA(nftMint, buyerKey);
-        const preIxs: anchor.web3.TransactionInstruction[] = [];
-        const buyerTokenAccountExists = await this.conn.getAccountInfo(buyerTokenPda);
-        if (!buyerTokenAccountExists) {
-            preIxs.push(this.createAssociatedTokenAccountInstruction(buyerTokenPda, buyerKey, buyerKey, nftMint));
-        }
-
-        const listingProofPda = (await this.fetchListingProofAccByEscrowToken(escrowToken)).publicKey;
-
-        const txSig = await this.escrowMarketplaceProgram.methods
-            .purchaseListing()
-            .accounts({
-                buyer: buyerKey,
-                buyerToken: buyerTokenPda,
-                nftMint,
-                seller: sellerKey,
-                listingProof: listingProofPda,
-                escrowToken,
-            })
-            .preInstructions(preIxs)
-            .rpc();
-
-        return { txSig, buyerTokenPda };
-    }
 }

@@ -13,19 +13,26 @@ export interface NFTInterface {
     tokenPubKey: PublicKey;
     imageUrl: string;
     name: string;
-    price: number;
+    // price: number;
 }
+
+                    // sellerKey: tokenAccountInfo.account.sellerKey,
+                    // mintPubKey: tokenAccountInfo.account.mintAddress,
+                    // // tokenPubKey: tokenAccountInfo.account.escrowToken,
+                    // imageUrl: availMintsMetadata[index].imageUrl,
+                    // name: availMintsMetadata[index].name,
+                    // // price: tokenAccountInfo.account.listPrice.toNumber(),
 
 interface cardNFTInterface {
     nft: NFTInterface;
     wallet: AnchorWallet | undefined;
-    setStates: (walletPubKey: AnchorWallet) => Promise<void>;
+    setStates: (walletPubKey: AnchorWallet | undefined) => Promise<void>;
     isListed: boolean;
 }
 
 const CardNFT = ({ nft, wallet, setStates, isListed }: cardNFTInterface) => {
     const { imageUrl, name } = nft;
-    console.log("imageUrl: ", imageUrl, " name: ", name);
+    // console.log("imageUrl: ", imageUrl, " name: ", name);
     const [imgLoading, setImgLoading] = useState<boolean>(true);
 
     return (

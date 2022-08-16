@@ -69,6 +69,7 @@ const ManageNFTs = () => {
 
     const setListedStates = async (wallet: AnchorWallet) => {
         const emClient = await initEscrowMarketplaceClient(wallet as any);
+        console.log("going into fetchListingProofAccBySeller");
         const listingProofAccounts = await emClient.fetchListingProofAccBySeller(wallet.publicKey);
         setListedNFTsAmount(listingProofAccounts.length)
 
@@ -76,28 +77,28 @@ const ManageNFTs = () => {
             listingProofAccounts.map((tokenAccountInfo) => {
                 return {
                     sellerKey: tokenAccountInfo.account.sellerKey,
-                    mintPubKey: tokenAccountInfo.account.nftMint,
-                    tokenPubKey: tokenAccountInfo.account.escrowToken,
+                    mintPubKey: tokenAccountInfo.account.mintAddress,
+                    tokenPubKey: tokenAccountInfo.account.sellerToken,
                     imageUrl: 'loading',
                     name: 'loading',
-                    price: 0,
+                    // price: 0,
                 };
             })
         );
 
         const availMintsMetadata = await getMintsMetadata(
-            listingProofAccounts.map((tokenAccountInfo) => tokenAccountInfo.account.nftMint)
+            listingProofAccounts.map((tokenAccountInfo) => tokenAccountInfo.account.mintAddress)
         );
 
         setListedCardsNftInfo(
             listingProofAccounts.map((tokenAccountInfo, index) => {
                 return {
                     sellerKey: tokenAccountInfo.account.sellerKey,
-                    mintPubKey: tokenAccountInfo.account.nftMint,
-                    tokenPubKey: tokenAccountInfo.account.escrowToken,
+                    mintPubKey: tokenAccountInfo.account.mintAddress,
+                    tokenPubKey: tokenAccountInfo.account.sellerToken,
                     imageUrl: availMintsMetadata[index].imageUrl,
                     name: availMintsMetadata[index].name,
-                    price: tokenAccountInfo.account.listPrice.toNumber(),
+                    // price: tokenAccountInfo.account.listPrice.toNumber(),
                 };
             })
         );

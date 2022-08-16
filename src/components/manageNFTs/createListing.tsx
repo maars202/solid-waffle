@@ -13,6 +13,7 @@ interface createListingInterface {
 
 const CreateListing = ({ nft, wallet, setOverallStates }: createListingInterface) => {
     const { mintPubKey, tokenPubKey, name } = nft;
+    // const { mintPubKey, name } = nft;
     const [isTxLoading, setIsTxLoading] = useState<boolean>(false);
     const [listingPrice, setListingPrice] = useState<string>();
     const [wsSubscriptionId, setWsSubscribtionId] = useState<number>();
@@ -23,14 +24,20 @@ const CreateListing = ({ nft, wallet, setOverallStates }: createListingInterface
 
     const onClickList = async () => {
         if (wallet && mintPubKey && tokenPubKey && listingPrice) {
+            // if (wallet && mintPubKey && listingPrice) {
+                console.log("wallet: ", wallet);
+                console.log("mintPubKey: ", mintPubKey);
+                console.log("tokenPubKey: ", tokenPubKey);
+                console.log("listingPrice: ", listingPrice);
             setIsTxLoading(true);
             try {
                 const emClient = await initEscrowMarketplaceClient(wallet as any);
+                // async createListing(seller: PublicKey, sellerToken: PublicKey, nftMint: PublicKey) {
                 const { txSig, listingProofPda } = await emClient.createListing(
                     wallet.publicKey,
                     tokenPubKey,
-                    mintPubKey,
-                    Math.ceil(parseFloat(listingPrice) * 1e9)
+                    new PublicKey(mintPubKey),
+                    // Math.ceil(parseFloat(listingPrice) * 1e9)
                 );
 
                 console.log('Submitted tx:', txSig);

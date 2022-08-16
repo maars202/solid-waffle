@@ -2,10 +2,12 @@ import { NodeWallet } from '@metaplex/js';
 import { Connection, Keypair } from '@solana/web3.js';
 import { EscrowMarketplaceClient } from '../escrowMarketplace.client';
 import { PublicKey } from '@solana/web3.js';
-import * as emIdl from '../data/escrow_marketplace_program.json';
+// import * as emIdl from '../data/escrow_marketplace_program.json';
+import * as emIdl from '../data/solana_point_system.json';
 
 const ESCROW_MARKETPLACE_PROG_ID = new PublicKey(
-  'DBZ5u3AaFpJMEGKhfQgmXQqUtTzQ5KpjXG9eZRn9R7cV'
+  // 'DBZ5u3AaFpJMEGKhfQgmXQqUtTzQ5KpjXG9eZRn9R7cV'
+  'Dshi354C4EoMnHsrDawsWReWmRTHNA1CxzUxM327B5Uw'
 );
 
 export const conn: Connection = new Connection("https://api.devnet.solana.com");
